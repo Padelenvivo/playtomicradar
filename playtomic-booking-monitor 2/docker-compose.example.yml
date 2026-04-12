@@ -1,0 +1,10 @@
+services:
+  playtomic-booking-monitor:
+    build:
+      context: .
+    container_name: playtomic-booking-monitor
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data

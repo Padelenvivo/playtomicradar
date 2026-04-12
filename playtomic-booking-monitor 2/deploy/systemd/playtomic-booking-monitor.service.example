@@ -1,0 +1,16 @@
+[Unit]
+Description=Playtomic Booking Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/playtomic-booking-monitor
+ExecStart=/usr/bin/node /opt/playtomic-booking-monitor/src/index.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/playtomic-booking-monitor/.env
+
+[Install]
+WantedBy=multi-user.target

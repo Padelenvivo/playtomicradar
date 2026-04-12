@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Playtomic Booking Monitor Demo</title>
+    <style>
+      :root {
+        --bg: #f5efe5;
+        --bg-deep: #e6dccf;
+        --panel: rgba(255, 251, 245, 0.88);
+        --panel-strong: #fffaf2;
+        --ink: #1b1f1d;
+        --muted: #56625d;
+        --line: rgba(27, 31, 29, 0.1);
+        --accent: #0c7c59;
+        --accent-2: #d9603b;
+        --accent-3: #17494d;
+        --good: #0c7c59;
+        --warn: #b76a1f;
+        --shadow: 0 24px 60px rgba(44, 38, 30, 0.14);
+        --radius-xl: 28px;
+        --radius-lg: 20px;
+        --radius-md: 16px;
+        --radius-sm: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(217, 96, 59, 0.22), transparent 28%),
+          radial-gradient(circle at top right, rgba(12, 124, 89, 0.18), transparent 24%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      }
+
+      .shell {
+        width: min(1320px, calc(100% - 32px));
+        margin: 24px auto;
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 36px;
+        background: rgba(255, 249, 241, 0.5);
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.3fr 0.9fr;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .hero-card,
+      .panel,
+      .stat,
+      .activity-item,
+      .reservation-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        box-shadow: 0 12px 32px rgba(28, 29, 27, 0.07);
+      }
+
+      .hero-card {
+        padding: 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-card::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        bottom: -40px;
+        width: 220px;
+        height: 220px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(23, 73, 77, 0.18), transparent 68%);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(12, 124, 89, 0.1);
+        color: var(--accent);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+        font-weight: 700;
+        line-height: 1.02;
+      }
+
+      h1 {
+        margin-top: 18px;
+        font-size: clamp(2.6rem, 6vw, 5.2rem);
+        max-width: 10ch;
+      }
+
+      .hero-copy {
+        margin-top: 14px;
+        max-width: 62ch;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.65;
+      }
+
+      .hero-points {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .chip {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.65);
+        border: 1px solid var(--line);
+        font-size: 0.92rem;
+      }
+
+      .summary-box {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        justify-content: space-between;
+      }
+
+      .summary-block {
+        padding: 16px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, rgba(12, 124, 89, 0.12), rgba(23, 73, 77, 0.14));
+      }
+
+      .summary-label {
+        color: var(--muted);
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .summary-value {
+        margin-top: 8px;
+        font-size: 2.1rem;
+        font-weight: 700;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        align-self: flex-start;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(12, 124, 89, 0.12);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 8px rgba(12, 124, 89, 0.12);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 420px 1fr;
+        gap: 18px;
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .section-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .section-copy {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.95rem;
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(27, 31, 29, 0.12);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--ink);
+        font: inherit;
+        transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: rgba(12, 124, 89, 0.5);
+        box-shadow: 0 0 0 4px rgba(12, 124, 89, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 6px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 13px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .primary {
+        color: white;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+        box-shadow: 0 14px 28px rgba(12, 124, 89, 0.22);
+      }
+
+      .secondary {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid var(--line);
+      }
+
+      .danger {
+        color: white;
+        background: linear-gradient(135deg, #cf5d39 0%, #a83f34 100%);
+      }
+
+      .board {
+        display: grid;
+        gap: 18px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .stat {
+        padding: 18px;
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 0.86rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .stat-value {
+        margin-top: 10px;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      .subtle {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .reservation-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 18px;
+      }
+
+      .reservation-card {
+        padding: 22px;
+      }
+
+      .kicker {
+        color: var(--accent-2);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 800;
+        font-size: 0.78rem;
+      }
+
+      .reservation-title {
+        margin-top: 10px;
+        font-size: 1.7rem;
+      }
+
+      .detail-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .detail-row span:first-child {
+        color: var(--muted);
+      }
+
+      .email-preview {
+        margin-top: 14px;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #fffdf8;
+      }
+
+      .email-head {
+        display: grid;
+        gap: 8px;
+        padding: 18px 20px;
+        background: linear-gradient(180deg, rgba(23, 73, 77, 0.08), rgba(255, 255, 255, 0.8));
+        border-bottom: 1px solid var(--line);
+      }
+
+      .email-meta {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .email-subject {
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      pre {
+        margin: 0;
+        padding: 20px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        line-height: 1.55;
+        color: #20302a;
+        background: rgba(255, 255, 255, 0.96);
+      }
+
+      .activity {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .activity-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 14px 16px;
+        border-radius: 18px;
+      }
+
+      .activity-icon {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        color: white;
+        font-weight: 900;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      }
+
+      .activity-time {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .mini-note {
+        margin-top: 8px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px dashed rgba(27, 31, 29, 0.12);
+        line-height: 1.5;
+      }
+
+      .footer-note {
+        margin-top: 18px;
+        padding: 14px 18px;
+        border-radius: 18px;
+        background: rgba(23, 73, 77, 0.08);
+        color: var(--muted);
+        font-size: 0.93rem;
+      }
+
+      .empty {
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--muted);
+        border: 1px dashed rgba(27, 31, 29, 0.14);
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .grid,
+        .reservation-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .shell {
+          width: min(100% - 16px, 100%);
+          margin: 8px auto;
+          padding: 10px;
+          border-radius: 24px;
+        }
+
+        .hero-card,
+        .panel,
+        .reservation-card,
+        .stat {
+          border-radius: 22px;
+        }
+
+        h1 {
+          font-size: 2.9rem;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+
+        .detail-row {
+          flex-direction: column;
+          gap: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-card">
+          <div class="eyebrow">Demo lista para abrir y probar</div>
+          <h1>Playtomic Radar</h1>
+          <p class="hero-copy">
+            Esta demo te ensena el producto final sin instalar nada. Configuras el club,
+            pulsas un boton y ves como apareceria una nueva reserva, el correo generado
+            y el historial de actividad.
+          </p>
+          <div class="hero-points">
+            <div class="chip">Sin npm</div>
+            <div class="chip">Sin servidor</div>
+            <div class="chip">Emails simulados</div>
+            <div class="chip">Formato Europa/Madrid</div>
+          </div>
+        </div>
+
+        <div class="summary-box hero-card">
+          <div class="summary-block">
+            <div class="summary-label">Modo actual</div>
+            <div class="summary-value" id="modeLabel">Demo manual</div>
+          </div>
+          <div class="summary-block">
+            <div class="summary-label">Frecuencia real del producto</div>
+            <div class="summary-value">1 consulta / min</div>
+          </div>
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            <span id="demoStatus">Lista para simular reservas</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <aside class="panel">
+          <div class="section-top">
+            <div>
+              <h2>Configuracion rapida</h2>
+              <p class="section-copy">
+                Cambia estos datos como si fueran los de un club real. Se guardan en tu navegador.
+              </p>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="field">
+              <label for="clubName">Nombre del club</label>
+              <input id="clubName" type="text" placeholder="Club de Padel Retiro" />
+            </div>
+
+            <div class="field">
+              <label for="alertEmail">Email de alertas</label>
+              <input id="alertEmail" type="email" placeholder="manager@club.com" />
+            </div>
+
+            <div class="field">
+              <label for="fromEmail">Email remitente</label>
+              <input id="fromEmail" type="email" placeholder="alertas@tudominio.com" />
+            </div>
+
+            <div class="field">
+              <label for="notes">Notas del club</label>
+              <textarea id="notes" placeholder="Ejemplo: avisar al manager y recepcion en cuanto entre una reserva premium."></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="saveButton">Guardar datos</button>
+            <button class="secondary" id="simulateButton">Simular reserva nueva</button>
+            <button class="secondary" id="duplicateButton">Simular duplicado</button>
+          </div>
+
+          <div class="actions">
+            <button class="secondary" id="autoButton">Activar demo en vivo</button>
+            <button class="danger" id="resetButton">Vaciar actividad</button>
+          </div>
+
+          <div class="mini-note">
+            La app real hace esto sola cada minuto con la API de Playtomic y un correo SMTP.
+            Esta pagina solo reproduce la experiencia final para que la puedas ver ya mismo.
+          </div>
+        </aside>
+
+        <div class="board">
+          <section class="stats">
+            <article class="stat">
+              <div class="stat-label">Club activo</div>
+              <div class="stat-value" id="clubValue">Sin configurar</div>
+              <div class="subtle">Marca comercial visible en los avisos</div>
+            </article>
+
+            <article class="stat">
+              <div class="stat-label">Reservas notificadas</div>
+              <div class="stat-value" id="countValue">0</div>
+              <div class="subtle">IDs unicos ya procesados</div>
+            </article>
+
+            <article class="stat">
+              <div class="stat-label">Estado del monitor</div>
+              <div class="stat-value" id="monitorValue">En demo</div>
+              <div class="subtle">Simula el comportamiento del producto</div>
+            </article>
+          </section>
+
+          <section class="reservation-grid">
+            <article class="reservation-card">
+              <div class="kicker">Ultima reserva detectada</div>
+              <h3 class="reservation-title" id="reservationTitle">Aun no has simulado ninguna reserva</h3>
+
+              <div class="detail-list">
+                <div class="detail-row">
+                  <span>ID</span>
+                  <strong id="bookingIdValue">-</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Pista</span>
+                  <strong id="courtValue">-</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Fecha y hora</span>
+                  <strong id="dateValue">-</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Jugadores</span>
+                  <strong id="playersValue">-</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Importe total</span>
+                  <strong id="amountValue">-</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="reservation-card">
+              <div class="kicker">Preview del email</div>
+              <div class="email-preview">
+                <div class="email-head">
+                  <div class="email-meta" id="emailMeta">De: alertas@demo.local - Para: manager@club.com</div>
+                  <div class="email-subject" id="emailSubject">Nueva reserva en Playtomic</div>
+                </div>
+                <pre id="emailBody">Pulsa "Simular reserva nueva" para generar el email.</pre>
+              </div>
+            </article>
+          </section>
+
+          <section class="panel">
+            <div class="section-top">
+              <div>
+                <h2>Actividad</h2>
+                <p class="section-copy">
+                  Asi se veria el flujo del producto cuando detecta reservas nuevas y evita duplicados.
+                </p>
+              </div>
+            </div>
+            <div id="activityList" class="activity">
+              <div class="empty">Todavia no hay actividad. Haz una simulacion para ver el producto en accion.</div>
+            </div>
+            <div class="footer-note">
+              Truco rapido: si haces doble clic en este archivo en tu Mac, se abrira como una demo local.
+              Si prefieres aun mas facil, usa el lanzador <strong>ABRIR_DEMO.command</strong>.
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const STORAGE_KEY = "playtomic-demo-state-v1";
+      const DEFAULT_STATE = {
+        clubName: "Club Demo Madrid",
+        alertEmail: "manager@club-demo.com",
+        fromEmail: "alertas@club-demo.com",
+        notes: "Avisar al manager cuando haya una reserva nueva en Playtomic.",
+        notificationCount: 0,
+        processedIds: [],
+        activity: [],
+        lastBooking: null,
+        autoMode: false
+      };
+
+      const courts = [
+        "Pista Central 01",
+        "Pista Cristal 04",
+        "Pista Outdoor 02",
+        "Pista Premium 07",
+        "Pista Cubierta 03"
+      ];
+
+      const amounts = [18, 22, 24, 28, 32, 36];
+      const playerCounts = [2, 4, 4, 4, 2];
+
+      const elements = {
+        clubName: document.getElementById("clubName"),
+        alertEmail: document.getElementById("alertEmail"),
+        fromEmail: document.getElementById("fromEmail"),
+        notes: document.getElementById("notes"),
+        saveButton: document.getElementById("saveButton"),
+        simulateButton: document.getElementById("simulateButton"),
+        duplicateButton: document.getElementById("duplicateButton"),
+        autoButton: document.getElementById("autoButton"),
+        resetButton: document.getElementById("resetButton"),
+        clubValue: document.getElementById("clubValue"),
+        countValue: document.getElementById("countValue"),
+        monitorValue: document.getElementById("monitorValue"),
+        reservationTitle: document.getElementById("reservationTitle"),
+        bookingIdValue: document.getElementById("bookingIdValue"),
+        courtValue: document.getElementById("courtValue"),
+        dateValue: document.getElementById("dateValue"),
+        playersValue: document.getElementById("playersValue"),
+        amountValue: document.getElementById("amountValue"),
+        emailMeta: document.getElementById("emailMeta"),
+        emailSubject: document.getElementById("emailSubject"),
+        emailBody: document.getElementById("emailBody"),
+        activityList: document.getElementById("activityList"),
+        modeLabel: document.getElementById("modeLabel"),
+        demoStatus: document.getElementById("demoStatus")
+      };
+
+      let state = loadState();
+      let autoInterval = null;
+
+      hydrateForm();
+      render();
+      syncAutoMode();
+
+      elements.saveButton.addEventListener("click", () => {
+        state.clubName = elements.clubName.value.trim() || DEFAULT_STATE.clubName;
+        state.alertEmail = elements.alertEmail.value.trim() || DEFAULT_STATE.alertEmail;
+        state.fromEmail = elements.fromEmail.value.trim() || DEFAULT_STATE.fromEmail;
+        state.notes = elements.notes.value.trim();
+        addActivity("Configuracion guardada", `Club listo: ${state.clubName}. El destinatario principal sera ${state.alertEmail}.`);
+        persistAndRender();
+      });
+
+      elements.simulateButton.addEventListener("click", () => {
+        simulateNewBooking();
+      });
+
+      elements.duplicateButton.addEventListener("click", () => {
+        if (!state.lastBooking) {
+          addActivity("Duplicado omitido", "Primero genera una reserva nueva para poder simular un duplicado.");
+          persistAndRender();
+          return;
+        }
+
+        processBooking(state.lastBooking, true);
+      });
+
+      elements.autoButton.addEventListener("click", () => {
+        state.autoMode = !state.autoMode;
+        addActivity(
+          state.autoMode ? "Demo en vivo activada" : "Demo en vivo detenida",
+          state.autoMode
+            ? "Ahora la demo generara una reserva automaticamente cada 12 segundos."
+            : "La generacion automatica de reservas ha sido desactivada."
+        );
+        syncAutoMode();
+        persistAndRender();
+      });
+
+      elements.resetButton.addEventListener("click", () => {
+        state = {
+          ...DEFAULT_STATE,
+          clubName: elements.clubName.value.trim() || DEFAULT_STATE.clubName,
+          alertEmail: elements.alertEmail.value.trim() || DEFAULT_STATE.alertEmail,
+          fromEmail: elements.fromEmail.value.trim() || DEFAULT_STATE.fromEmail,
+          notes: elements.notes.value.trim() || DEFAULT_STATE.notes,
+          autoMode: false
+        };
+        syncAutoMode();
+        addActivity("Actividad reiniciada", "Se ha vaciado el historial y los IDs procesados.");
+        persistAndRender();
+      });
+
+      function simulateNewBooking() {
+        const booking = createMockBooking();
+        processBooking(booking, false);
+      }
+
+      function processBooking(booking, forceDuplicate) {
+        const processedIds = new Set(state.processedIds);
+        const alreadyProcessed = processedIds.has(booking.id);
+
+        state.lastBooking = booking;
+
+        if (alreadyProcessed || forceDuplicate) {
+          addActivity(
+            "Reserva duplicada ignorada",
+            `La reserva ${booking.id} ya estaba procesada, asi que no se ha generado otro email.`
+          );
+          persistAndRender();
+          return;
+        }
+
+        processedIds.add(booking.id);
+        state.processedIds = Array.from(processedIds);
+        state.notificationCount += 1;
+        addActivity(
+          "Nueva reserva detectada",
+          `Se ha generado un correo para ${booking.court} por ${formatCurrency(booking.amount)}.`
+        );
+        addActivity(
+          "Email preparado",
+          `Asunto: ${buildSubject(booking)}. Destinatario: ${state.alertEmail}.`
+        );
+        persistAndRender();
+      }
+
+      function createMockBooking() {
+        const randomCourt = courts[Math.floor(Math.random() * courts.length)];
+        const randomAmount = amounts[Math.floor(Math.random() * amounts.length)];
+        const randomPlayers = playerCounts[Math.floor(Math.random() * playerCounts.length)];
+        const plusMinutes = 30 + Math.floor(Math.random() * 360);
+        const startDate = new Date(Date.now() + plusMinutes * 60 * 1000);
+        const dateStamp = startDate.toISOString().slice(0, 16).replace(/[-:T]/g, "");
+
+        return {
+          id: `BK-${dateStamp}-${Math.floor(Math.random() * 900 + 100)}`,
+          court: randomCourt,
+          startDate: startDate.toISOString(),
+          players: randomPlayers,
+          amount: randomAmount
+        };
+      }
+
+      function buildSubject(booking) {
+        const clubName = state.clubName || DEFAULT_STATE.clubName;
+        return `Nueva reserva en ${clubName}: ${booking.court}`;
+      }
+
+      function buildBody(booking) {
+        const lines = [
+          "Se ha detectado una nueva reserva en Playtomic.",
+          "",
+          `Club: ${state.clubName || DEFAULT_STATE.clubName}`,
+          `ID de reserva: ${booking.id}`,
+          `Pista: ${booking.court}`,
+          `Fecha y hora (Europe/Madrid): ${formatMadridDate(booking.startDate)}`,
+          `Numero de jugadores: ${booking.players}`,
+          `Importe total: ${formatCurrency(booking.amount)}`
+        ];
+
+        if (state.notes) {
+          lines.push("", `Notas internas: ${state.notes}`);
+        }
+
+        return lines.join("\n");
+      }
+
+      function addActivity(title, text) {
+        state.activity.unshift({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          title,
+          text,
+          time: new Date().toISOString()
+        });
+
+        state.activity = state.activity.slice(0, 12);
+      }
+
+      function hydrateForm() {
+        elements.clubName.value = state.clubName;
+        elements.alertEmail.value = state.alertEmail;
+        elements.fromEmail.value = state.fromEmail;
+        elements.notes.value = state.notes;
+      }
+
+      function render() {
+        elements.clubValue.textContent = state.clubName || "Sin configurar";
+        elements.countValue.textContent = String(state.notificationCount);
+        elements.monitorValue.textContent = state.autoMode ? "Demo en vivo" : "En demo";
+        elements.modeLabel.textContent = state.autoMode ? "Demo automatica" : "Demo manual";
+        elements.demoStatus.textContent = state.autoMode
+          ? "Generando reservas de ejemplo en vivo"
+          : "Lista para simular reservas";
+        elements.autoButton.textContent = state.autoMode ? "Parar demo en vivo" : "Activar demo en vivo";
+
+        if (state.lastBooking) {
+          elements.reservationTitle.textContent = state.lastBooking.court;
+          elements.bookingIdValue.textContent = state.lastBooking.id;
+          elements.courtValue.textContent = state.lastBooking.court;
+          elements.dateValue.textContent = formatMadridDate(state.lastBooking.startDate);
+          elements.playersValue.textContent = String(state.lastBooking.players);
+          elements.amountValue.textContent = formatCurrency(state.lastBooking.amount);
+          elements.emailSubject.textContent = buildSubject(state.lastBooking);
+          elements.emailBody.textContent = buildBody(state.lastBooking);
+          elements.emailMeta.textContent = `De: ${state.fromEmail} - Para: ${state.alertEmail}`;
+        } else {
+          elements.reservationTitle.textContent = "Aun no has simulado ninguna reserva";
+          elements.bookingIdValue.textContent = "-";
+          elements.courtValue.textContent = "-";
+          elements.dateValue.textContent = "-";
+          elements.playersValue.textContent = "-";
+          elements.amountValue.textContent = "-";
+          elements.emailSubject.textContent = "Nueva reserva en Playtomic";
+          elements.emailBody.textContent = 'Pulsa "Simular reserva nueva" para generar el email.';
+          elements.emailMeta.textContent = `De: ${state.fromEmail} - Para: ${state.alertEmail}`;
+        }
+
+        renderActivity();
+      }
+
+      function renderActivity() {
+        if (state.activity.length === 0) {
+          elements.activityList.innerHTML = '<div class="empty">Todavia no hay actividad. Haz una simulacion para ver el producto en accion.</div>';
+          return;
+        }
+
+        elements.activityList.innerHTML = state.activity
+          .map(
+            (item) => `
+              <div class="activity-item">
+                <div class="activity-icon">+</div>
+                <div>
+                  <strong>${escapeHtml(item.title)}</strong>
+                  <div class="subtle">${escapeHtml(item.text)}</div>
+                  <div class="activity-time">${formatActivityTime(item.time)}</div>
+                </div>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      function formatMadridDate(value) {
+        return new Intl.DateTimeFormat("es-ES", {
+          timeZone: "Europe/Madrid",
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(new Date(value));
+      }
+
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("es-ES", {
+          style: "currency",
+          currency: "EUR"
+        }).format(amount);
+      }
+
+      function formatActivityTime(value) {
+        return new Intl.DateTimeFormat("es-ES", {
+          timeZone: "Europe/Madrid",
+          dateStyle: "short",
+          timeStyle: "medium"
+        }).format(new Date(value));
+      }
+
+      function syncAutoMode() {
+        if (autoInterval) {
+          clearInterval(autoInterval);
+          autoInterval = null;
+        }
+
+        if (state.autoMode) {
+          autoInterval = setInterval(() => {
+            simulateNewBooking();
+          }, 12000);
+        }
+      }
+
+      function persistAndRender() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        render();
+      }
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            return { ...DEFAULT_STATE };
+          }
+
+          const parsed = JSON.parse(raw);
+          return {
+            ...DEFAULT_STATE,
+            ...parsed
+          };
+        } catch (error) {
+          return { ...DEFAULT_STATE };
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+    </script>
+  </body>
+</html>

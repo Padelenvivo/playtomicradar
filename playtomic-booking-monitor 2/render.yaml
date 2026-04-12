@@ -1,0 +1,41 @@
+services:
+  - type: worker
+    name: playtomic-booking-monitor
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 120
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: APP_NAME
+        value: Playtomic Booking Monitor
+      - key: CLUB_NAME
+        sync: false
+      - key: TIMEZONE
+        value: Europe/Madrid
+      - key: POLL_INTERVAL_MS
+        value: 60000
+      - key: PROCESSED_BOOKINGS_FILE
+        value: /app/data/processed-bookings.json
+      - key: PLAYTOMIC_CLIENT_ID
+        sync: false
+      - key: PLAYTOMIC_CLIENT_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: ALERT_EMAIL_TO
+        sync: false

@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY src ./src
+COPY .env.example ./
+COPY README.md ./
+RUN mkdir -p /app/data
+
+VOLUME ["/app/data"]
+
+CMD ["npm", "start"]

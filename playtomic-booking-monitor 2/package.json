@@ -1,0 +1,21 @@
+{
+  "name": "playtomic-booking-monitor",
+  "version": "1.0.0",
+  "description": "Monitor de nuevas reservas en Playtomic con alertas por email",
+  "private": true,
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:once": "node src/index.js --once",
+    "verify:smtp": "node src/index.js --verify-smtp",
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/playtomic.js && node --check src/mailer.js && node --check src/storage.js && node --check src/bookingFormatter.js && node --check src/monitor.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.13"
+  }
+}
