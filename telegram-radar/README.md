@@ -2,6 +2,16 @@
 
 Modulo independiente para Freedom Wellness XX Padel Club. Consulta una fuente autorizada de disponibilidad de Playtomic, evita avisos duplicados y prepara un mensaje para Telegram con boton de reserva.
 
+## Instalacion recomendada en el Mac del club
+
+1. Descargar el repositorio y abrir la carpeta `telegram-radar`.
+2. Hacer doble clic en `setup-mac.command`.
+3. Pegar el token cuando lo solicite y enviar un mensaje en el grupo para que detecte su identificador.
+4. Revisar la prueba, que no publica ningun mensaje.
+5. Abrir `activar-mac.command` para iniciar la revision cada 30 minutos.
+
+Para detenerlo, abrir `detener-mac.command`. El token queda solamente en `.env` dentro del Mac con permisos restringidos.
+
 ## Estado inicial
 
 La automatizacion esta deliberadamente en modo seguro:
