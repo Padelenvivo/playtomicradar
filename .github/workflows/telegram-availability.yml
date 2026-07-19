@@ -24,7 +24,6 @@ jobs:
           CLUB_NAME: Freedom Wellness XX Padel Club
           TIMEZONE: Europe/Madrid
           BOOKING_URL: https://playtomic.com/clubs/freedom-wellness-xx-padel-club
-          PLAYTOMIC_AVAILABILITY_URL: https://api.playtomic.io/v1/availability
           PLAYTOMIC_TENANT_ID: 838146b1-c519-4000-82fa-017fc76304f5
           DRY_RUN: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
