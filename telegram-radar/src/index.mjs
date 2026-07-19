@@ -24,20 +24,28 @@ async function fetchJson(url, options = {}) {
 }
 
 async function getAvailability() {
+  const { chromium } = await import("playwright");
   const dates = madridDates(2);
   const all = [];
-  for (const date of dates) {
-    const url = new URL(config.bookingUrl);
-    url.searchParams.set("date", date);
-    const response = await fetch(url, {
-      headers: {
-        accept: "text/html,application/xhtml+xml",
-        "user-agent": "Mozilla/5.0 (compatible; FreedomAvailabilityRadar/1.0)"
-      },
-      signal: AbortSignal.timeout(30000)
-    });
-    if (!response.ok) throw new Error(`No se pudo leer la pagina publica (${response.status})`);
-    all.push(...parsePublicSlots(await response.text(), date));
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ locale: "es-ES", timezoneId: config.timezone });
+    for (const date of dates) {
+      const url = new URL(config.bookingUrl);
+      url.searchParams.set("date", date);
+      const response = await page.goto(url.toString(), { waitUntil: "domcontentloaded", timeout: 45000 });
+      if (!response?.ok()) throw new Error(`No se pudo abrir la pagina publica (${response?.status() || "sin respuesta"})`);
+      await page.waitForSelector('[data-slot-id], input[type="date"]', { timeout: 30000 });
+      await page.waitForTimeout(2500);
+      const slots = await page.locator("[data-slot-id]").evaluateAll((elements) => elements.map((element) => ({
+        id: element.getAttribute("data-slot-id"),
+        time: element.getAttribute("data-tracking-property-time"),
+        duration: element.getAttribute("data-tracking-property-duration")
+      })));
+      all.push(...parseBrowserSlots(slots, date));
+    }
+  } finally {
+    await browser.close();
   }
   return [...new Map(all.map((slot) => [slot.id, slot])).values()]
     .filter(isFutureLocalSlot)
@@ -56,10 +64,9 @@ function madridDates(count) {
   });
 }
 
-function parsePublicSlots(html, date) {
-  const regex = /data-tracking-property-time="([^"]+)"\s+data-tracking-property-duration="(\d+)"[^>]*data-slot-id="([^"]+)"/g;
-  return [...html.matchAll(regex)].map((match) => {
-    const [, time, duration, id] = match;
+function parseBrowserSlots(slots, date) {
+  return slots.filter((slot) => slot.id && slot.time && slot.duration).map((slot) => {
+    const { time, duration, id } = slot;
     const resourceId = id.slice(0, 36);
     return { id: `${date}-${resourceId}-${time}-${duration}`, date, time: time.padStart(5, "0"), duration: Number(duration), court: COURTS[resourceId] || "Pista disponible" };
   });
