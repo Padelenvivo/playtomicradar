@@ -18,7 +18,7 @@ En `Settings > Secrets and variables > Actions`:
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 
-La lectura usa la disponibilidad que Playtomic publica para el club y no necesita la contrasena de Playtomic Manager. No se deben pegar credenciales personales en el codigo.
+La lectura usa la pagina publica de disponibilidad que Playtomic muestra para el club y no necesita la contrasena de Playtomic Manager. No se deben pegar credenciales personales en el codigo.
 
 ## Activacion posterior a la prueba
 
