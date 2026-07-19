@@ -1,0 +1,36 @@
+name: Freedom Telegram availability
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  check-availability:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: telegram-radar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run check
+      - run: npm start
+        env:
+          CLUB_NAME: Freedom Wellness XX Padel Club
+          TIMEZONE: Europe/Madrid
+          BOOKING_URL: https://playtomic.com/clubs/freedom-wellness-xx-padel-club
+          PLAYTOMIC_TOKEN_URL: ${{ secrets.PLAYTOMIC_TOKEN_URL }}
+          PLAYTOMIC_AVAILABILITY_URL: ${{ secrets.PLAYTOMIC_AVAILABILITY_URL }}
+          PLAYTOMIC_CLIENT_ID: ${{ secrets.PLAYTOMIC_CLIENT_ID }}
+          PLAYTOMIC_CLIENT_SECRET: ${{ secrets.PLAYTOMIC_CLIENT_SECRET }}
+          PLAYTOMIC_TENANT_ID: ${{ secrets.PLAYTOMIC_TENANT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DRY_RUN: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
