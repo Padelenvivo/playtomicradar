@@ -10,13 +10,10 @@ const config = {
   clubName: process.env.CLUB_NAME || "Freedom Wellness XX Padel Club",
   timezone: process.env.TIMEZONE || "Europe/Madrid",
   bookingUrl: process.env.BOOKING_URL || "https://playtomic.com/clubs/freedom-wellness-xx-padel-club",
-  tokenUrl: process.env.PLAYTOMIC_TOKEN_URL || "https://api.playtomic.io/oauth/token",
-  availabilityUrl: required("PLAYTOMIC_AVAILABILITY_URL"),
-  clientId: required("PLAYTOMIC_CLIENT_ID"),
-  clientSecret: required("PLAYTOMIC_CLIENT_SECRET"),
-  tenantId: process.env.PLAYTOMIC_TENANT_ID || "",
-  telegramToken: required("TELEGRAM_BOT_TOKEN"),
-  telegramChatId: required("TELEGRAM_CHAT_ID"),
+  availabilityUrl: process.env.PLAYTOMIC_AVAILABILITY_URL || "https://api.playtomic.io/v1/availability",
+  tenantId: process.env.PLAYTOMIC_TENANT_ID || "838146b1-c519-4000-82fa-017fc76304f5",
+  telegramToken: process.env.TELEGRAM_BOT_TOKEN || "",
+  telegramChatId: process.env.TELEGRAM_CHAT_ID || "",
   dryRun: (process.env.DRY_RUN ?? "true").toLowerCase() !== "false"
 };
 
@@ -27,28 +24,22 @@ async function fetchJson(url, options = {}) {
   return body ? JSON.parse(body) : {};
 }
 
-async function getAccessToken() {
-  const payload = await fetchJson(config.tokenUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      client_id: config.clientId,
-      client_secret: config.clientSecret
-    })
-  });
-  if (!payload.access_token) throw new Error("Playtomic no devolvio access_token");
-  return payload.access_token;
-}
-
 async function getAvailability() {
-  const token = await getAccessToken();
   const url = new URL(config.availabilityUrl);
-  if (config.tenantId && !url.searchParams.has("tenant_id")) {
-    url.searchParams.set("tenant_id", config.tenantId);
-  }
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 2);
+  url.searchParams.set("tenant_id", config.tenantId);
+  url.searchParams.set("sport_id", "PADEL");
+  url.searchParams.set("start_min", start.toISOString());
+  url.searchParams.set("start_max", end.toISOString());
   const payload = await fetchJson(url, {
-    headers: { authorization: `Bearer ${token}`, accept: "application/json" }
+    headers: {
+      accept: "application/json",
+      origin: "https://playtomic.com",
+      referer: config.bookingUrl
+    }
   });
   return normalizeSlots(payload).filter((slot) => new Date(slot.start).getTime() > Date.now());
 }
@@ -76,7 +67,7 @@ function normalizeSlot(slot, parent) {
   return {
     start: new Date(start).toISOString(),
     end: new Date(end).toISOString(),
-    court: slot.court?.name || slot.court_name || slot.resource?.name || parent.court?.name || parent.name || "Pista disponible"
+    court: slot.court?.name || slot.court_name || slot.resource?.name || parent.court?.name || parent.name || COURTS[slot.resource_id || parent.resource_id] || "Pista disponible"
   };
 }
 
@@ -146,6 +137,9 @@ async function sendTelegram(text) {
     console.log("DRY_RUN activo. Mensaje preparado:\n\n" + text);
     return;
   }
+  if (!config.telegramToken || !config.telegramChatId) {
+    throw new Error("Faltan TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID para enviar");
+  }
   await fetchJson(`https://api.telegram.org/bot${config.telegramToken}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -158,6 +152,23 @@ async function sendTelegram(text) {
     })
   });
 }
+
+const COURTS = {
+  "21b33866-d286-4f39-9fb6-2ee5f0f80cb1": "Padel 1 (Disponible Camara)",
+  "e0bad04b-973b-4441-a31f-b6b1b357fd45": "Padel 2",
+  "4c9c2e78-453e-453c-bb85-ace5cac9b573": "Padel 3",
+  "de18245e-dfcb-41e7-9417-27aaa6b3b140": "Padel 4",
+  "01146ba2-733a-4ec4-b96d-18c3620774c0": "Padel 5",
+  "ba512821-d260-42df-b5fc-883e6ba36cf4": "Padel 6",
+  "a7df009f-21d6-40e2-b0fc-8b1d5ade4eff": "Padel 7 (individual)",
+  "67002651-fbec-4d17-893e-9b224598214e": "Padel 8",
+  "3c4f04d4-77ef-47f9-a2fc-6bc799673fdf": "Padel 9",
+  "26c02726-8f74-4483-9cbc-502f6d2b689d": "Padel 10",
+  "483fd762-dcdc-4a69-958b-047879163d1e": "Padel 11",
+  "1bfd6773-f030-4e9e-b83a-c27117d00b93": "Padel 12 (individual)",
+  "99a52f1c-52ea-4584-9fba-7ef3fe68a439": "Padel 13",
+  "6bd60081-1691-44e3-b475-a84b8506dddb": "Padel 14"
+};
 
 async function main() {
   const slots = await getAvailability();
