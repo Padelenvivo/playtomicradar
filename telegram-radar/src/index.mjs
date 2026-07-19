@@ -10,7 +10,6 @@ const config = {
   clubName: process.env.CLUB_NAME || "Freedom Wellness XX Padel Club",
   timezone: process.env.TIMEZONE || "Europe/Madrid",
   bookingUrl: process.env.BOOKING_URL || "https://playtomic.com/clubs/freedom-wellness-xx-padel-club",
-  availabilityUrl: process.env.PLAYTOMIC_AVAILABILITY_URL || "https://api.playtomic.io/v1/availability",
   tenantId: process.env.PLAYTOMIC_TENANT_ID || "838146b1-c519-4000-82fa-017fc76304f5",
   telegramToken: process.env.TELEGRAM_BOT_TOKEN || "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID || "",
@@ -25,85 +24,81 @@ async function fetchJson(url, options = {}) {
 }
 
 async function getAvailability() {
-  const url = new URL(config.availabilityUrl);
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 2);
-  url.searchParams.set("tenant_id", config.tenantId);
-  url.searchParams.set("sport_id", "PADEL");
-  url.searchParams.set("start_min", start.toISOString());
-  url.searchParams.set("start_max", end.toISOString());
-  const payload = await fetchJson(url, {
-    headers: {
-      accept: "application/json",
-      origin: "https://playtomic.com",
-      referer: config.bookingUrl
-    }
-  });
-  return normalizeSlots(payload).filter((slot) => new Date(slot.start).getTime() > Date.now());
+  const dates = madridDates(2);
+  const all = [];
+  for (const date of dates) {
+    const url = new URL(config.bookingUrl);
+    url.searchParams.set("date", date);
+    const response = await fetch(url, {
+      headers: {
+        accept: "text/html,application/xhtml+xml",
+        "user-agent": "Mozilla/5.0 (compatible; FreedomAvailabilityRadar/1.0)"
+      },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!response.ok) throw new Error(`No se pudo leer la pagina publica (${response.status})`);
+    all.push(...parsePublicSlots(await response.text(), date));
+  }
+  return [...new Map(all.map((slot) => [slot.id, slot])).values()]
+    .filter(isFutureLocalSlot)
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
 }
 
-function normalizeSlots(payload) {
-  const candidates = Array.isArray(payload)
-    ? payload
-    : payload.slots || payload.availability || payload.data || payload.results || [];
-
-  return candidates.flatMap((item) => {
-    const nested = item.slots || item.times || item.availability;
-    if (Array.isArray(nested)) {
-      return nested.map((slot) => normalizeSlot(slot, item)).filter(Boolean);
-    }
-    const slot = normalizeSlot(item, {});
-    return slot ? [slot] : [];
-  }).sort((a, b) => new Date(a.start) - new Date(b.start));
-}
-
-function normalizeSlot(slot, parent) {
-  if (slot.available === false || slot.status === "unavailable" || slot.booked === true) return null;
-  const start = slot.start || slot.start_date || slot.starts_at || slot.startTime || slot.from;
-  const end = slot.end || slot.end_date || slot.ends_at || slot.endTime || slot.to;
-  if (!start || !end || Number.isNaN(new Date(start).getTime()) || Number.isNaN(new Date(end).getTime())) return null;
-  return {
-    start: new Date(start).toISOString(),
-    end: new Date(end).toISOString(),
-    court: slot.court?.name || slot.court_name || slot.resource?.name || parent.court?.name || parent.name || COURTS[slot.resource_id || parent.resource_id] || "Pista disponible"
-  };
-}
-
-function dateParts(iso) {
+function madridDates(count) {
   const formatter = new Intl.DateTimeFormat("es-ES", {
     timeZone: config.timezone,
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
+    year: "numeric", month: "2-digit", day: "2-digit"
   });
-  return Object.fromEntries(formatter.formatToParts(new Date(iso)).map((part) => [part.type, part.value]));
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(Date.now() + index * 86400000);
+    const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  });
+}
+
+function parsePublicSlots(html, date) {
+  const regex = /data-tracking-property-time="([^"]+)"\s+data-tracking-property-duration="(\d+)"[^>]*data-slot-id="([^"]+)"/g;
+  return [...html.matchAll(regex)].map((match) => {
+    const [, time, duration, id] = match;
+    const resourceId = id.slice(0, 36);
+    return { id: `${date}-${resourceId}-${time}-${duration}`, date, time: time.padStart(5, "0"), duration: Number(duration), court: COURTS[resourceId] || "Pista disponible" };
+  });
+}
+
+function isFutureLocalSlot(slot) {
+  const [today] = madridDates(1);
+  if (slot.date !== today) return true;
+  const nowTime = new Intl.DateTimeFormat("en-GB", { timeZone: config.timezone, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
+  return slot.time > nowTime;
 }
 
 function formatMessage(slots) {
   const grouped = new Map();
   for (const slot of slots) {
-    const start = dateParts(slot.start);
-    const end = dateParts(slot.end);
-    const day = `${start.weekday} ${start.day}/${start.month}`;
-    const line = `${start.hour}:${start.minute}–${end.hour}:${end.minute} · ${slot.court}`;
-    if (!grouped.has(day)) grouped.set(day, []);
-    grouped.get(day).push(line);
+    if (!grouped.has(slot.date)) grouped.set(slot.date, new Map());
+    const key = `${slot.time}|${slot.duration}`;
+    const day = grouped.get(slot.date);
+    if (!day.has(key)) day.set(key, new Set());
+    day.get(key).add(slot.court);
   }
 
   const lines = [`🎾 <b>PISTAS DISPONIBLES</b>`, `<b>${escapeHtml(config.clubName)}</b>`, ""];
-  for (const [day, daySlots] of grouped) {
-    lines.push(`📅 <b>${escapeHtml(day)}</b>`);
-    lines.push(...daySlots.slice(0, 20).map((line) => `• ${escapeHtml(line)}`));
+  for (const [date, daySlots] of grouped) {
+    lines.push(`📅 <b>${escapeHtml(formatDay(date))}</b>`);
+    const entries = [...daySlots.entries()].slice(0, 24);
+    for (const [key, courts] of entries) {
+      const [time, duration] = key.split("|");
+      lines.push(`• ${escapeHtml(time)} · ${courts.size} pista${courts.size === 1 ? "" : "s"} · ${duration} min`);
+    }
     lines.push("");
   }
   lines.push(`👉 <a href="${escapeHtml(config.bookingUrl)}">Reservar en Playtomic</a>`);
   lines.push("<i>Disponibilidad sujeta a cambios.</i>");
   return lines.join("\n");
+}
+
+function formatDay(date) {
+  return new Intl.DateTimeFormat("es-ES", { timeZone: "UTC", weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date(`${date}T12:00:00Z`));
 }
 
 function escapeHtml(value) {
