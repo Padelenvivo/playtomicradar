@@ -15,15 +15,10 @@ La automatizacion esta deliberadamente en modo seguro:
 
 En `Settings > Secrets and variables > Actions`:
 
-- `PLAYTOMIC_TOKEN_URL`
-- `PLAYTOMIC_AVAILABILITY_URL`
-- `PLAYTOMIC_CLIENT_ID`
-- `PLAYTOMIC_CLIENT_SECRET`
-- `PLAYTOMIC_TENANT_ID` si la integracion lo necesita
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 
-Los datos de Playtomic deben proceder de una integracion/API autorizada del club. No se deben pegar credenciales personales en el codigo.
+La lectura usa la disponibilidad que Playtomic publica para el club y no necesita la contrasena de Playtomic Manager. No se deben pegar credenciales personales en el codigo.
 
 ## Activacion posterior a la prueba
 
